@@ -116,15 +116,48 @@ function problem8() {
       left outer join Branch b on e.branchNumber = b.branchNumber and e.sin = b.managerSIN
     where e.salary > 50000
     order by b.branchName desc, firstName asc
-    LIMIT 10`
+    LIMIT 10
+  `;
 }
 
 function problem9() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    select e.sin, e.firstName, e.lastName, e.salary,
+     (CASE WHEN e.sin = b.managerSIN THEN b.branchName END) as branchName
+    from Employee e, Branch b
+    where e.salary > 50000
+      and e.branchNumber = b.branchNumber
+    order by branchName desc, firstName asc
+    LIMIT 10;
+  `;
 }
 
 function problem10() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    with helen_morgan_owns_at as (
+      select DISTINCT(a.branchNumber)
+      from Account a
+             left join Owns o on a.accNumber = o.accNumber
+             left join Customer c on o.customerID = c.customerID
+      where c.firstName = 'Helen' and c.lastName = 'Morgan'
+    ) select c.customerID, c.firstName, c.lastName, c.income
+    from Customer c
+    where not EXISTS (
+      (
+        select branchNumber
+        from helen_morgan_owns_at h
+      )
+      except
+      (
+        select a1.branchNumber
+        from Account a1
+               left join Owns o1 ON a1.accNumber = o1.accNumber
+        where o1.customerID = c.customerID
+      )
+    ) and income > 5000
+    order by income desc
+    LIMIT 10;
+  `;
 }
 
 function problem11() {
