@@ -47,7 +47,27 @@ function problem3() {
 }
 
 function problem4() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    with customer_owns_account_with_branch as (
+      select o.customerID, c.income, o.accNumber, a.branchNumber, b.branchName
+      from Owns o
+             left join Customer c on o.customerID = c.customerID
+             left join Account a on o.accNumber = a.accNumber
+             left join Branch b on a.branchNumber = b.branchNumber
+      where c.income > 80000
+    ), customer_owns_account_at_london as (
+      select customerID from customer_owns_account_with_branch
+      where branchName = 'London'
+    ), customer_owns_account_at_latveria as (
+      select customerID from customer_owns_account_with_branch
+      where branchName = 'Latveria'
+    ) select customerID, income, accNumber, branchNumber
+    from customer_owns_account_with_branch
+    where customerID in (select customerID from customer_owns_account_at_london)
+      and customerID in (select customerID from customer_owns_account_at_latveria)
+    order by customerID asc, accNumber asc
+    LIMIT 10;
+`
 }
 
 function problem5() {
