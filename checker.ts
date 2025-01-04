@@ -14,7 +14,8 @@ function problem1() {
     from Customer 
     where income between 50000 and 60000 
     order by income desc, lastName asc, firstName asc 
-    LIMIT 10;`
+    LIMIT 10;
+  `;
 }
 
 function problem2() {
@@ -40,7 +41,7 @@ function problem3() {
     )
     order by lastName asc, firstName asc
     LIMIT 10;
-  `
+  `;
 }
 
 function problem4() {
@@ -58,7 +59,7 @@ function problem4() {
       and customerID in (select c2.customerID from customer_owns_account_with_branch c2 where c2.branchName = 'Latveria')
     order by customerID asc, accNumber asc
     LIMIT 10;
-  `
+  `;
 }
 
 function problem5() {
@@ -68,19 +69,54 @@ function problem5() {
       left join Account a on o.accNumber = a.accNumber
     where a.type in ('SAV', 'BUS')
     order by o.customerID asc, a.type asc, o.accNumber asc
-    LIMIT 10`
+    LIMIT 10;
+  `;
 }
 
 function problem6() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    select b.branchName, a.accNumber, a.balance
+    from Branch b
+      left join Account a on b.branchNumber = a.branchNumber
+    where a.balance > 100000
+      and b.managerSIN = (select e.sin from Employee e where e.firstName = 'Phillip' and e.lastName = 'Edwards')
+    order by a.accNumber asc 
+    LIMIT 10;
+  `;
 }
 
 function problem7() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    with customer_coowns_account_in_branch as (
+      select c.customerID, co.customerID as coID, o.accNumber, b.branchName
+      from Customer c
+             left join Owns o on c.customerID = o.customerID
+             left join Account a on o.accNumber = a.accNumber
+             left join Branch b on a.branchNumber = b.branchNumber
+             left join Owns co on o.accNumber = co.accNumber
+    ) select DISTINCT(c3.customerID) from customer_coowns_account_in_branch c3
+    where c3.customerID not in (
+      select c2.customerID
+      from customer_coowns_account_in_branch c2
+      where c2.coID in (
+        select c1.customerID
+        from customer_coowns_account_in_branch c1
+        where c1.branchName = 'London'
+      )
+    ) and c3.branchName = 'New York'
+    order by customerID
+      LIMIT 10;
+  `;
 }
 
 function problem8() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    select e.sin, e.firstName, e.lastName, e.salary, b.branchName
+    from Employee e
+      left outer join Branch b on e.branchNumber = b.branchNumber and e.sin = b.managerSIN
+    where e.salary > 50000
+    order by b.branchName desc, firstName asc
+    LIMIT 10`
 }
 
 function problem9() {
