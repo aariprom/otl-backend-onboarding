@@ -9,15 +9,41 @@ const prisma = new PrismaClient()
 
 
 function problem1() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    select firstName, lastName, income from Customer 
+    where income between 50000 and 60000 
+    order by income desc, lastName asc, firstName asc 
+    LIMIT 10;`
 }
 
+/*
+  왜 CAST((m.salary - e.salary) as CHAR(10))으로 하지 않으면 Incorrect인가요?
+*/
+
 function problem2() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    select e.sin, b.branchName, e.salary, CAST((m.salary - e.salary) AS char(10)) as 'Salary Diff'
+    from Employee e
+    join Branch b on e.branchNumber = b.branchNumber
+    join Employee m on b.managerSIN = m.sin
+    where b.branchName in ('London', 'Berlin')
+    order by (m.salary - e.salary) desc
+    LIMIT 10;
+  `;
 }
 
 function problem3() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    select firstName, lastName, income
+    from Customer c
+    where income / 2 > all (
+        select b.income
+        from Customer b
+        where b.lastName = 'Butler'
+      )
+    order by lastName asc, firstName asc
+    LIMIT 10;
+    `
 }
 
 function problem4() {
