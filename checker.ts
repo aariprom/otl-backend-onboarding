@@ -13,7 +13,7 @@ function problem1() {
     select firstName, lastName, income 
     from Customer 
     where income between 50000 and 60000 
-    order by income desc, lastName asc, firstName asc 
+    order by income desc, lastName, firstName 
     LIMIT 10;
   `;
 }
@@ -39,7 +39,7 @@ function problem3() {
       from Customer b
       where b.lastName = 'Butler'
     )
-    order by lastName asc, firstName asc
+    order by lastName, firstName
     LIMIT 10;
   `;
 }
@@ -57,7 +57,7 @@ function problem4() {
     from customer_owns_account_with_branch
     where customerID in (select c1.customerID from customer_owns_account_with_branch c1 where c1.branchName = 'London')
       and customerID in (select c2.customerID from customer_owns_account_with_branch c2 where c2.branchName = 'Latveria')
-    order by customerID asc, accNumber asc
+    order by customerID, accNumber
     LIMIT 10;
   `;
 }
@@ -68,7 +68,7 @@ function problem5() {
     from Owns o
       left join Account a on o.accNumber = a.accNumber
     where a.type in ('SAV', 'BUS')
-    order by o.customerID asc, a.type asc, o.accNumber asc
+    order by o.customerID, a.type, o.accNumber
     LIMIT 10;
   `;
 }
@@ -80,7 +80,7 @@ function problem6() {
       left join Account a on b.branchNumber = a.branchNumber
     where a.balance > 100000
       and b.managerSIN = (select e.sin from Employee e where e.firstName = 'Phillip' and e.lastName = 'Edwards')
-    order by a.accNumber asc 
+    order by a.accNumber
     LIMIT 10;
   `;
 }
@@ -115,7 +115,7 @@ function problem8() {
     from Employee e
       left outer join Branch b on e.branchNumber = b.branchNumber and e.sin = b.managerSIN
     where e.salary > 50000
-    order by b.branchName desc, firstName asc
+    order by b.branchName desc, firstName 
     LIMIT 10
   `;
 }
@@ -127,7 +127,7 @@ function problem9() {
     from Employee e, Branch b
     where e.salary > 50000
       and e.branchNumber = b.branchNumber
-    order by branchName desc, firstName asc
+    order by branchName desc, firstName
     LIMIT 10;
   `;
 }
@@ -190,11 +190,29 @@ function problem15() {
 }
 
 function problem17() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    select c.customerID, c.firstName, c.lastName, c.income, AVG(a.balance) as "average account balance"
+    from Customer c
+           left join Owns o on c.customerID = o.customerID
+           left join Account a on a.accNumber = o.accNumber
+    where c.lastName like 'S%e%'
+    group by c.customerID
+    having COUNT(DISTINCT(a.accNumber)) >= 3
+    order by c.customerID;
+  `;
 }
 
 function problem18() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    select a.accNumber, a.balance, SUM(t.amount) as "sum of transaction amounts"
+    from Account a
+           left join Transactions t on a.accNumber = t.accNumber
+           left join Branch b on a.branchNumber = b.branchNumber
+    where b.branchName = 'Berlin'
+    group by a.accNumber, a.balance
+    having COUNT(DISTINCT (transNumber)) >= 10
+    order by \`sum of transaction amounts\` 
+    LIMIT 10;`
 }
 
 const ProblemList = [
