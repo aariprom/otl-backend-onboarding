@@ -161,7 +161,12 @@ function problem10() {
 }
 
 function problem11() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    select sin, firstName, lastName, salary from Employee
+    where salary <= all (
+      select e2.salary from Employee e2
+    );
+  `;
 }
 
 function problem14() {
