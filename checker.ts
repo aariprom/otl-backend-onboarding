@@ -34,10 +34,10 @@ function problem3() {
     select firstName, lastName, income
     from Customer c
     where income / 2 > all (
-        select b.income
-        from Customer b
-        where b.lastName = 'Butler'
-      )
+      select b.income
+      from Customer b
+      where b.lastName = 'Butler'
+    )
     order by lastName asc, firstName asc
     LIMIT 10;
   `
@@ -62,7 +62,13 @@ function problem4() {
 }
 
 function problem5() {
-  return prisma.$queryRaw`select * from Customer`
+  return prisma.$queryRaw`
+    select o.customerID, a.type, o.accNumber, a.balance
+    from Owns o
+      left join Account a on o.accNumber = a.accNumber
+    where a.type in ('SAV', 'BUS')
+    order by o.customerID asc, a.type asc, o.accNumber asc
+    LIMIT 10`
 }
 
 function problem6() {
