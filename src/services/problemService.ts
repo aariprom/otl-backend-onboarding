@@ -10,7 +10,7 @@ export class ProblemService {
             case 2:
                 return this.problem2();
             case 3:
-                break;
+                return this.problem3();
             case 4:
                 break;
             case 5:
@@ -102,5 +102,51 @@ export class ProblemService {
             .slice(0, 10);
     }
 
-    async problem3 () {}
+    async problem3 () {
+        const [butlerIncome, result] = await Promise.all([
+            prisma.customer.findMany({
+                select: {
+                    income: true,
+                },
+                where: {
+                    lastName: {
+                        equals: 'Butler',
+                    },
+                },
+            }),
+            prisma.customer.findMany({
+                select: {
+                    firstName: true,
+                    lastName: true,
+                    income: true,
+                },
+                orderBy: [
+                    {
+                        lastName: "asc",
+                    },
+                    {
+                        firstName: "asc",
+                    },
+                ],
+            }),
+        ]);
+
+        return result.filter(item => {
+            const income = item.income;
+            return butlerIncome.every(refItem => (refItem.income || 0) < (income || 0) / 2)
+        }).slice(0, 10);
+    }
+
+    asciiDifferenceFlexible(str1: string, str2: string): number {
+        const minLength = Math.min(str1.length, str2.length);
+
+        for (let i = 0; i < minLength; i++) {
+            const char1 = str1.charCodeAt(i);
+            const char2 = str2.charCodeAt(i);
+            if (char1 !== char2) {
+                return char1 - char2;
+            }
+        }
+        return str1.length - str2.length;
+    }
 }
