@@ -5,9 +5,6 @@ import lodash from 'lodash'
 
 const prisma = new PrismaClient()
 
-
-
-
 function problem1() {
   return prisma.$queryRaw`
     select firstName, lastName, income 
