@@ -16,7 +16,7 @@ export class ProblemService {
             case 5:
                 return this.problem5 ();
             case 6:
-                break;
+                return this.problem6 ();
             case 7:
                 break;
             case 8:
@@ -250,6 +250,46 @@ export class ProblemService {
                 balance: owns.Account.balance,
             };
         });
+    }
+
+    async problem6 () {
+        const target = await prisma.employee.findFirst({
+            select: {
+                sin: true,
+            },
+            where: {
+                firstName: 'Phillip',
+                lastName: 'Edwards',
+            },
+        })
+
+        const accountWithBranch = await prisma.account.findMany({
+            include: {
+                Branch: {
+                    select: {
+                        branchName: true,
+                    },
+                },
+            },
+            where: {
+                Branch: {
+                    managerSIN: target?.sin,
+                }
+            },
+            orderBy: {
+                accNumber: "asc",
+            },
+        });
+
+        return accountWithBranch.map(account => {
+            return {
+                branchName: account.Branch?.branchName,
+                accNumber: account.accNumber,
+                balance: account.balance,
+            };
+        }).filter(account => {
+            return Number(account.balance) > 100000;
+        }).slice(0, 10);
     }
 
     asciiDifferenceFlexible (str1: string, str2: string): number {
