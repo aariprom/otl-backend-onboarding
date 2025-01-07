@@ -187,11 +187,7 @@ export class ProblemService {
         return ownsDetailed.filter(owns => {
             return customerIDs.some(refCustomerID => owns.customerID == refCustomerID)
         }).sort((a, b) => {
-            if (a.customerID == b.customerID) {
-                return a.accNumber - b.accNumber;
-            } else {
-                return a.customerID - b.customerID;
-            }
+            return (a.customerID == b.customerID) ? (a.accNumber - b.accNumber) : (a.customerID - b.customerID);
         }).slice(0, 10).flatMap(owns => {
             return {
                 customerID: owns.customerID,
@@ -381,20 +377,74 @@ export class ProblemService {
     }
 
     async problem8 () {
+        const employees = await prisma.employee.findMany({
+            include: {
+                Branch_Employee_branchNumberToBranch: {
+                    select: {
+                        branchName: true,
+                    },
+                },
+            },
+            where: {
+                salary: {
+                    gte: 50000,
+                },
+            },
+        });
 
+        const managers = await prisma.branch.findMany({
+            select: {
+                managerSIN: true,
+                branchName: true,
+            },
+        });
+
+        const managerMap = new Map(managers.map(m => {
+            return [m.managerSIN, m.branchName];
+        }));
+
+        return employees.map(employee => {
+
+            const isManager = managers.some(manager => {
+                return manager.managerSIN == employee.sin;
+            });
+
+            const branchName = isManager ? managerMap.get(employee.sin) : null;
+
+            return {
+                sin: employee.sin,
+                firstName: employee.firstName,
+                lastName: employee.lastName,
+                salary: employee.salary,
+                branchName: branchName,
+            };
+        }).sort((a, b) => {
+            return (a.branchName == b.branchName) ?
+                this.asciiDifferenceFlexible(a.firstName, b.firstName)
+            :
+                this.asciiDifferenceFlexible(b.branchName, a.branchName);
+        }).slice(0, 10);
     }
 
-    asciiDifferenceFlexible (str1: string, str2: string): number {
-        const minLength = Math.min(str1.length, str2.length);
+    asciiDifferenceFlexible (str1: string | null | undefined, str2: string | null | undefined): number {
+        if (str1 && str2) {
+            const minLength = Math.min(str1.length, str2.length);
 
-        for (let i = 0; i < minLength; i++) {
-            const char1 = str1.charCodeAt(i);
-            const char2 = str2.charCodeAt(i);
-            if (char1 !== char2) {
-                return char1 - char2;
+            for (let i = 0; i < minLength; i++) {
+                const char1 = str1.charCodeAt(i);
+                const char2 = str2.charCodeAt(i);
+                if (char1 !== char2) {
+                    return char1 - char2;
+                }
             }
+            return str1.length - str2.length;
+        } else if (!str1 && str2) {
+            return -1;
+        } else if (str1 && !str2) {
+            return 1;
+        } else {
+            return 0;
         }
-        return str1.length - str2.length;
     }
 
     getIntersection<T>(array1: T[], array2: T[], ...keys: Array<keyof T>) {
