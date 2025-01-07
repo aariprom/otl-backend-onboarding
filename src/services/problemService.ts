@@ -22,7 +22,7 @@ export class ProblemService {
             case 8:
                 return this.problem8 ();
             case 9:
-                break;
+                return this.problem9 ();
             case 10:
                 break;
             case 11:
@@ -424,6 +424,10 @@ export class ProblemService {
             :
                 this.asciiDifferenceFlexible(b.branchName, a.branchName);
         }).slice(0, 10);
+    }
+
+    async problem9 () {
+        return this.problem8 ();
     }
 
     asciiDifferenceFlexible (str1: string | null | undefined, str2: string | null | undefined): number {
