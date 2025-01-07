@@ -6,15 +6,15 @@ export class ProblemService {
         console.log('problem solve for id:', id);
         switch (id) {
             case 1:
-                return this.problem1();
+                return this.problem1 ();
             case 2:
-                return this.problem2();
+                return this.problem2 ();
             case 3:
-                return this.problem3();
+                return this.problem3 ();
             case 4:
-                break;
+                return this.problem4 ();
             case 5:
-                break;
+                return this.problem5 ();
             case 6:
                 break;
             case 7:
@@ -109,9 +109,7 @@ export class ProblemService {
                     income: true,
                 },
                 where: {
-                    lastName: {
-                        equals: 'Butler',
-                    },
+                    lastName: 'Butler',
                 },
             }),
             prisma.customer.findMany({
@@ -137,7 +135,124 @@ export class ProblemService {
         }).slice(0, 10);
     }
 
-    asciiDifferenceFlexible(str1: string, str2: string): number {
+    async problem4 () {
+        const includeClause = {
+            Customer: {
+                select: {
+                    customerID: true,
+                    income: true,
+                },
+            },
+            Account: {
+                select: {
+                    accNumber: true,
+                    branchNumber: true,
+                    Branch: {
+                        select: {
+                            branchName: true,
+                        },
+                    },
+                },
+            },
+        };
+
+        const whereClause = {
+            Customer: {
+                income: {
+                    gte: 80000,
+                },
+            },
+        };
+
+        const ownsDetailed = await prisma.owns.findMany({
+            include: includeClause,
+            where: whereClause,
+        });
+
+        const london = ownsDetailed.filter(owns => {
+            return (owns.Account.Branch?.branchName == 'London');
+        });
+
+        const latveria = ownsDetailed.filter(owns => {
+            return (owns.Account.Branch?.branchName == 'Latveria');
+        });
+
+        const customerIDs = this.getIntersection(london, latveria, "customerID").map(owns => {
+            return owns.customerID;
+        });
+
+        return ownsDetailed.filter(owns => {
+            return customerIDs.some(refCustomerID => owns.customerID == refCustomerID)
+        }).sort((a, b) => {
+            if (a.customerID == b.customerID) {
+                return a.accNumber - b.accNumber;
+            } else {
+                return a.customerID - b.customerID;
+            }
+        }).slice(0, 10).flatMap(owns => {
+            return {
+                customerID: owns.customerID,
+                income: owns.Customer.income,
+                accNumber: owns.accNumber,
+                branchNumber: owns.Account.branchNumber,
+            };
+        });
+    }
+
+    async problem5 () {
+        const ownsDetailed = await prisma.owns.findMany({
+            include: {
+                Customer: {
+                    select: {
+                        customerID: true,
+                    },
+                },
+                Account: {
+                    select: {
+                        type: true,
+                        accNumber: true,
+                        balance: true,
+                    },
+                },
+            },
+            where: {
+                Account: {
+                    type: {
+                        in: ['SAV', 'BUS'],
+                    },
+                },
+            },
+            orderBy: [
+                {
+                    Customer: {
+                        customerID: "asc",
+                    },
+                },
+                {
+                    Account: {
+                        type: "asc",
+                    },
+                },
+                {
+                    Account: {
+                        accNumber: "asc",
+                    }
+                },
+            ],
+            take: 10,
+        });
+
+        return ownsDetailed.map(owns => {
+            return {
+                customerID: owns.customerID,
+                type: owns.Account.type,
+                accNumber: owns.accNumber,
+                balance: owns.Account.balance,
+            };
+        });
+    }
+
+    asciiDifferenceFlexible (str1: string, str2: string): number {
         const minLength = Math.min(str1.length, str2.length);
 
         for (let i = 0; i < minLength; i++) {
@@ -148,5 +263,11 @@ export class ProblemService {
             }
         }
         return str1.length - str2.length;
+    }
+
+    getIntersection<T>(array1: T[], array2: T[], ...keys: Array<keyof T>) {
+        return array1.filter((obj1) =>
+            array2.find((obj2) => keys.every((k) => obj1[k] === obj2[k]))
+        );
     }
 }
