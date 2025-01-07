@@ -18,9 +18,9 @@ export class ProblemService {
             case 6:
                 return this.problem6 ();
             case 7:
-                break;
+                return this.problem7 ();
             case 8:
-                break;
+                return this.problem8 ();
             case 9:
                 break;
             case 10:
@@ -69,7 +69,7 @@ export class ProblemService {
     }
 
     async problem2 () {
-        let result = await prisma.branch.findMany({
+        const result = await prisma.branch.findMany({
             include: {
                 Employee_Branch_managerSINToEmployee: {
                     select: {
@@ -89,17 +89,20 @@ export class ProblemService {
                 },
             },
         });
+
         const formatted = result.flatMap(branch => {
-            const managerSalary = branch.Employee_Branch_managerSINToEmployee?.salary || 0;
+            const managerSalary = branch.Employee_Branch_managerSINToEmployee?.salary;
             return branch.Employee_Employee_branchNumberToBranch.map(employee => ({
                 sin: employee.sin,
                 branchName: branch.branchName,
                 salary: employee.salary,
-                'Salary Diff': managerSalary - (employee.salary || 0),
+                'Salary Diff': managerSalary! - employee?.salary!,
             }));
         });
-        return formatted.sort((a, b) => b['Salary Diff'] - a['Salary Diff'])
-            .slice(0, 10);
+
+        return formatted.sort((a, b) => {
+            return b['Salary Diff'] - a['Salary Diff'];
+        }).slice(0, 10);
     }
 
     async problem3 () {
@@ -290,6 +293,95 @@ export class ProblemService {
         }).filter(account => {
             return Number(account.balance) > 100000;
         }).slice(0, 10);
+    }
+
+    async problem7 () {
+        const coOwnedAccounts = await prisma.owns.groupBy({
+            by: ['accNumber'],
+            _count: {
+                customerID: true,
+            },
+            having: {
+                customerID: {
+                    _count: {
+                        gte: 2,
+                    }
+                }
+            },
+        });
+
+        const customerOwnsLondonAccounts = await prisma.owns.findMany({
+            select: {
+                customerID: true,
+            },
+            where: {
+                Account: {
+                    Branch: {
+                        branchName: 'London',
+                    },
+                },
+            },
+        });
+
+        const accountsLondonCustomerCoOwns = await prisma.owns.findMany({
+            select: {
+                accNumber: true,
+            },
+            where: {
+                customerID: {
+                    in: customerOwnsLondonAccounts.map(customer => {
+                        return customer.customerID;
+                    }),
+                },
+                accNumber: {
+                    in: coOwnedAccounts.map(account => {
+                        return account.accNumber;
+                    })
+                }
+            },
+        });
+
+        const customerCoOwnsAccountsWithLondonCustomer = await prisma.owns.findMany({
+            select: {
+                customerID: true,
+            },
+            where: {
+                accNumber: {
+                    in: accountsLondonCustomerCoOwns.map(account => {
+                        return account.accNumber;
+                    }),
+                },
+            },
+        })
+
+        return prisma.owns.findMany({
+            select: {
+                customerID: true,
+            },
+            distinct: "customerID",
+            where: {
+                customerID: {
+                    notIn: [...customerOwnsLondonAccounts, ...customerCoOwnsAccountsWithLondonCustomer].map(
+                        customer => {
+                            return customer.customerID;
+                        }
+                    ),
+                },
+                Account: {
+                    Branch: {
+                        branchName: 'New York',
+                    },
+                },
+            },
+            orderBy: {
+                customerID: "asc",
+            },
+            take: 10,
+        });
+    }
+
+    async problem8 () {
+
     }
 
     asciiDifferenceFlexible (str1: string, str2: string): number {
