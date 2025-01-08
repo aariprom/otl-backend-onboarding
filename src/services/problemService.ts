@@ -1,7 +1,9 @@
 import prisma from '../prismaClient';
-import { Account, Branch, Customer, Employee, Owns, Transactions } from '@prisma/client';
+import Util from '../util/util';
 
 export class ProblemService {
+    constructor(private util: Util) {};
+
     async solve (id: number): Promise<any> {
         console.log('problem solve for id:', id);
         switch (id) {
@@ -24,7 +26,7 @@ export class ProblemService {
             case 9:
                 return this.problem9 ();
             case 10:
-                break;
+                return this.problem10 ();
             case 11:
                 break;
             case 14:
@@ -180,12 +182,12 @@ export class ProblemService {
             return (owns.Account.Branch?.branchName == 'Latveria');
         });
 
-        const customerIDs = this.getIntersection(london, latveria, "customerID").map(owns => {
+        const customerIDs = this.util.getIntersection(london, latveria, "customerID").map(owns => {
             return owns.customerID;
         });
 
         return ownsDetailed.filter(owns => {
-            return customerIDs.some(refCustomerID => owns.customerID == refCustomerID)
+            return customerIDs.some((refCustomerID: number) => owns.customerID == refCustomerID)
         }).sort((a, b) => {
             return (a.customerID == b.customerID) ? (a.accNumber - b.accNumber) : (a.customerID - b.customerID);
         }).slice(0, 10).flatMap(owns => {
@@ -420,9 +422,9 @@ export class ProblemService {
             };
         }).sort((a, b) => {
             return (a.branchName == b.branchName) ?
-                this.asciiDifferenceFlexible(a.firstName, b.firstName)
+                this.util.asciiDifferenceFlexible(a.firstName, b.firstName)
             :
-                this.asciiDifferenceFlexible(b.branchName, a.branchName);
+                this.util.asciiDifferenceFlexible(b.branchName, a.branchName);
         }).slice(0, 10);
     }
 
@@ -430,30 +432,79 @@ export class ProblemService {
         return this.problem8 ();
     }
 
-    asciiDifferenceFlexible (str1: string | null | undefined, str2: string | null | undefined): number {
-        if (str1 && str2) {
-            const minLength = Math.min(str1.length, str2.length);
+    async problem10 () {
+        const [ref, targetCustomerAccounts, targetCustomers] = await Promise.all([
+            prisma.owns.findMany({
+                select: {
+                    Account: {
+                        select: {
+                            branchNumber: true,
+                        },
+                    },
+                },
+                where: {
+                    Customer: {
+                        firstName: 'Helen',
+                        lastName: 'Morgan',
+                    },
+                },
+            }),
+            prisma.owns.findMany({
+                select: {
+                    customerID: true,
+                    Account: {
+                        select: {
+                            branchNumber: true,
+                        },
+                    },
+                },
+                where: {
+                    Customer: {
+                        income: {
+                            gt: 5000,
+                        },
+                    }
+                },
+            }),
+            prisma.customer.findMany({
+                select: {
+                    customerID: true,
+                    firstName: true,
+                    lastName: true,
+                    income: true,
+                },
+                where: {
+                    income: {
+                        gt: 5000
+                    },
+                },
+                orderBy: {
+                    income: "desc",
+                },
+            })
+        ]);
 
-            for (let i = 0; i < minLength; i++) {
-                const char1 = str1.charCodeAt(i);
-                const char2 = str2.charCodeAt(i);
-                if (char1 !== char2) {
-                    return char1 - char2;
-                }
-            }
-            return str1.length - str2.length;
-        } else if (!str1 && str2) {
-            return -1;
-        } else if (str1 && !str2) {
-            return 1;
-        } else {
-            return 0;
-        }
-    }
+        const refBranches = ref.map(owns => {
+            return owns.Account.branchNumber;
+        });
 
-    getIntersection<T>(array1: T[], array2: T[], ...keys: Array<keyof T>) {
-        return array1.filter((obj1) =>
-            array2.find((obj2) => keys.every((k) => obj1[k] === obj2[k]))
-        );
+        const filtered =  targetCustomers.filter(customer => {
+            const branches = targetCustomerAccounts.filter(owns => {
+                return owns.customerID == customer.customerID;
+            }).map(owns => owns.Account.branchNumber);
+            return refBranches.every(refBranch => {
+                return branches.includes(refBranch);
+            });
+
+        });
+
+        return filtered.map(customer => {
+            return {
+                customerID: customer.customerID,
+                firstName: customer.firstName,
+                lastName: customer.lastName,
+                income: customer.income,
+            };
+        }).slice(0, 10);
     }
 }

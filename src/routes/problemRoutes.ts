@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { ProblemService } from "../services/problemService";
+import Util from "../util/util";
 
 const problemRouter = Router();
 
-const problemService = new ProblemService();
+const problemService = new ProblemService(new Util());
 
 problemRouter.get('/:id', async (req, res) => {
     try {
