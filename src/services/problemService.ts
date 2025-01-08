@@ -28,9 +28,9 @@ export class ProblemService {
             case 10:
                 return this.problem10 ();
             case 11:
-                break;
+                return this.problem11 ();
             case 14:
-                break;
+                return this.problem14 ();
             case 15:
                 break;
             case 17:
@@ -495,7 +495,6 @@ export class ProblemService {
             return refBranches.every(refBranch => {
                 return branches.includes(refBranch);
             });
-
         });
 
         return filtered.map(customer => {
@@ -507,4 +506,45 @@ export class ProblemService {
             };
         }).slice(0, 10);
     }
+
+    async problem11 () {
+        const minSalary = (await prisma.employee.aggregate({
+            _min: {
+                salary: true,
+            },
+        }))._min.salary;
+
+        return prisma.employee.findMany({
+            select: {
+                sin: true,
+                firstName: true,
+                lastName: true,
+                salary: true,
+            },
+            where: {
+                salary: minSalary,
+            },
+        });
+    };
+
+    async problem14 () {
+        const result = await prisma.employee.aggregate({
+            _sum: {
+                salary: true,
+            },
+            where: {
+                Branch_Employee_branchNumberToBranch: {
+                    branchName: 'Moscow',
+                },
+            },
+        });
+
+        return [
+            {
+                "sum of employees salaries": result._sum.salary,
+            }
+        ];
+    };
+
+
 }
