@@ -86,10 +86,10 @@ function problem7() {
     with customer_coowns_account_in_branch as (
       select c.customerID, co.customerID as coID, o.accNumber, b.branchName
       from Customer c
-             left join Owns o on c.customerID = o.customerID
-             left join Account a on o.accNumber = a.accNumber
-             left join Branch b on a.branchNumber = b.branchNumber
-             left join Owns co on o.accNumber = co.accNumber
+        left join Owns o on c.customerID = o.customerID
+        left join Account a on o.accNumber = a.accNumber
+        left join Branch b on a.branchNumber = b.branchNumber
+        left join Owns co on o.accNumber = co.accNumber
     ) select DISTINCT(c3.customerID) from customer_coowns_account_in_branch c3
     where c3.customerID not in (
       select c2.customerID
@@ -119,7 +119,7 @@ function problem8() {
 function problem9() {
   return prisma.$queryRaw`
     select e.sin, e.firstName, e.lastName, e.salary,
-     (CASE WHEN e.sin = b.managerSIN THEN b.branchName END) as branchName
+      CASE WHEN e.sin = b.managerSIN THEN b.branchName END as branchName
     from Employee e, Branch b
     where e.salary > 50000
       and e.branchNumber = b.branchNumber
@@ -133,8 +133,8 @@ function problem10() {
     with helen_morgan_owns_at as (
       select DISTINCT(a.branchNumber)
       from Account a
-             left join Owns o on a.accNumber = o.accNumber
-             left join Customer c on o.customerID = c.customerID
+        left join Owns o on a.accNumber = o.accNumber
+        left join Customer c on o.customerID = c.customerID
       where c.firstName = 'Helen' and c.lastName = 'Morgan'
     ) select c.customerID, c.firstName, c.lastName, c.income
     from Customer c
@@ -147,7 +147,7 @@ function problem10() {
       (
         select a1.branchNumber
         from Account a1
-               left join Owns o1 ON a1.accNumber = o1.accNumber
+          left join Owns o1 ON a1.accNumber = o1.accNumber
         where o1.customerID = c.customerID
       )
     ) and income > 5000
@@ -177,8 +177,8 @@ function problem15() {
   return prisma.$queryRaw`
     select c.customerID, c.firstName, c.lastName
     from Customer c
-     left join Owns o on c.customerID = o.customerID
-     left join Account a on o.accNumber = a.accNumber
+      left join Owns o on c.customerID = o.customerID
+      left join Account a on o.accNumber = a.accNumber
     group by c.customerID, c.firstName, c.lastName
     having COUNT(DISTINCT(a.branchNumber)) = 4
     order by c.lastName, c.firstName
@@ -189,8 +189,8 @@ function problem17() {
   return prisma.$queryRaw`
     select c.customerID, c.firstName, c.lastName, c.income, AVG(a.balance) as "average account balance"
     from Customer c
-           left join Owns o on c.customerID = o.customerID
-           left join Account a on a.accNumber = o.accNumber
+      left join Owns o on c.customerID = o.customerID
+      left join Account a on a.accNumber = o.accNumber
     where c.lastName like 'S%e%'
     group by c.customerID
     having COUNT(DISTINCT(a.accNumber)) >= 3
@@ -202,8 +202,8 @@ function problem18() {
   return prisma.$queryRaw`
     select a.accNumber, a.balance, SUM(t.amount) as "sum of transaction amounts"
     from Account a
-           left join Transactions t on a.accNumber = t.accNumber
-           left join Branch b on a.branchNumber = b.branchNumber
+      left join Transactions t on a.accNumber = t.accNumber
+      left join Branch b on a.branchNumber = b.branchNumber
     where b.branchName = 'Berlin'
     group by a.accNumber, a.balance
     having COUNT(DISTINCT (transNumber)) >= 10

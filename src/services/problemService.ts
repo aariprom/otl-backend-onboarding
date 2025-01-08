@@ -32,7 +32,7 @@ export class ProblemService {
             case 14:
                 return this.problem14 ();
             case 15:
-                break;
+                return this.problem15 ();
             case 17:
                 break;
             case 18:
@@ -546,5 +546,44 @@ export class ProblemService {
         ];
     };
 
+    async problem15 () {
+        const [owns, customers] = await Promise.all([
+            prisma.owns.findMany({
+                select: {
+                    customerID: true,
+                    Account: {
+                        select: {
+                            branchNumber: true
+                        },
+                    },
+                },
+            }),
+            prisma.customer.findMany({
+                select: {
+                    customerID: true,
+                    firstName: true,
+                    lastName: true,
+                },
+                orderBy: [
+                    {
+                        lastName: "asc"
+                    },
+                    {
+                        firstName: "asc"
+                    },
+                ],
+            }),
+        ]);
 
+        return customers.filter(customer => {
+            const branchNumbers = new Set(
+                owns.filter(own => {
+                    return own.customerID == customer.customerID;
+                }).map(own => {
+                    return own.Account.branchNumber;
+                })
+            );
+            return branchNumbers.size === 4;
+        }).slice(0, 10);
+    }
 }
