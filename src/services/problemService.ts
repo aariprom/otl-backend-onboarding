@@ -1,5 +1,5 @@
 import prisma from '../prismaClient';
-import Util from '../util/util';
+import Util from '../util';
 
 export class ProblemService {
     constructor(private util: Util) {};
@@ -34,7 +34,7 @@ export class ProblemService {
             case 15:
                 return this.problem15 ();
             case 17:
-                break;
+                return this.problem17 ();
             case 18:
                 break;
             default:
@@ -585,5 +585,85 @@ export class ProblemService {
             );
             return branchNumbers.size === 4;
         }).slice(0, 10);
+    };
+
+    async problem17 () {
+        const whereClause = {
+            Customer: {
+                lastName: {
+                    startsWith: 'S',
+                    contains: 'e'
+                },
+            },
+        };
+
+        const [targetCustomers, customersOwnAccounts] = await Promise.all([
+            prisma.owns.groupBy({
+                by: ['customerID'],
+                _count: {
+                    accNumber: true,
+                },
+                where: whereClause,
+                orderBy: {
+                    customerID: "asc",
+                },
+                having: {
+                    accNumber: {
+                        _count: {
+                            gte: 3
+                        },
+                    },
+                },
+            }),
+            prisma.owns.findMany({
+                select: {
+                    customerID: true,
+                    Customer: {
+                        select: {
+                            firstName: true,
+                            lastName: true,
+                            income: true,
+                        }
+                    },
+                    Account: {
+                        select: {
+                            balance: true,
+                        },
+                    },
+                },
+                where: whereClause,
+            }),
+        ]);
+
+        const customersOwnAccountsMap = new Map(customersOwnAccounts.map(owns => {
+            return [
+                owns.customerID,
+                {
+                    firstName: owns.Customer.firstName,
+                    lastName: owns.Customer.lastName,
+                    income: owns.Customer.income,
+                    owns: owns.Account.balance,
+                }
+            ];
+        }));
+
+        return targetCustomers.map(targetCustomer => {
+            const avgBalance = customersOwnAccounts.filter(owns => {
+                return owns.customerID == targetCustomer.customerID;
+            }).map(owns => {
+                return owns.Account.balance;
+            }).reduce((acc, balance) => {
+                return acc + Number(balance!);
+            }, 0) / targetCustomer._count.accNumber;
+
+            const customerInfo = customersOwnAccountsMap.get(targetCustomer.customerID);
+            return {
+                customerID: targetCustomer.customerID,
+                firstName: customerInfo?.firstName,
+                lastName: customerInfo?.lastName,
+                income: customerInfo?.income,
+                "average account balance": avgBalance,
+            };
+        });
     }
 }

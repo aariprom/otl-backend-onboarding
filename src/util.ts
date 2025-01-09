@@ -2,7 +2,6 @@ export class Util {
     asciiDifferenceFlexible (str1: string | null | undefined, str2: string | null | undefined): number {
         if (str1 && str2) {
             const minLength = Math.min(str1.length, str2.length);
-
             for (let i = 0; i < minLength; i++) {
                 const char1 = str1.charCodeAt(i);
                 const char2 = str2.charCodeAt(i);

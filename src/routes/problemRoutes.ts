@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ProblemService } from "../services/problemService";
-import Util from "../util/util";
+import Util from "../util";
 
 const problemRouter = Router();
 
