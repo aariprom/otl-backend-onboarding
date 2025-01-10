@@ -36,7 +36,7 @@ export class ProblemService {
             case 17:
                 return this.problem17 ();
             case 18:
-                break;
+                return this.problem18 ();
             default:
                 throw new Error('invalid problem id');
         }
@@ -664,6 +664,73 @@ export class ProblemService {
                 income: customerInfo?.income,
                 "average account balance": avgBalance,
             };
+        }).slice(0, 10);
+    };
+
+    async problem18 () {
+
+        const transactions = await prisma.transactions.findMany({
+            select: {
+                amount: true,
+                Account: {
+                    select: {
+                        accNumber: true,
+                        balance: true,
+                        Branch: {
+                            select: {
+                                branchNumber: true
+                            },
+                        },
+                    },
+                },
+            },
+            where: {
+                Account: {
+                    Branch: {
+                        branchName: 'Berlin',
+                    },
+                },
+            },
         });
+
+        const transactionMap = new Map<number, {
+            accNumber: number;
+            balance: string | null;
+            amount: number | null;
+            count: number;
+        }>();
+
+        for (const transaction of transactions) {
+            const accNumber = transaction.Account.accNumber;
+            console.log(accNumber);
+
+            if (!transactionMap.has(accNumber)) {
+                transactionMap.set(accNumber, {
+                    accNumber,
+                    balance: transaction.Account.balance,
+                    amount: Number(transaction.amount),
+                    count: 1,
+                });
+            } else {
+                const current = transactionMap.get(accNumber)!; // Non-null assertion
+                transactionMap.set(accNumber, {
+                    ...current,
+                    amount: current.amount! + Number(transaction.amount!),
+                    count: current.count + 1,
+                });
+            }
+        }
+
+        return (Array.from(transactionMap.values()).filter(account => {
+            return account.count >= 10;
+        }).sort((a, b) => {
+            return a.amount! - b.amount!;
+        })).map(account => {
+            return {
+                accNumber: account.accNumber,
+                balance: String(account.balance),
+                'sum of transaction amounts': account.amount,
+            };
+        }).slice(0, 10);
     }
 }

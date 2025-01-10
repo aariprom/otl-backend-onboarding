@@ -112,7 +112,7 @@ function problem8() {
       left outer join Branch b on e.branchNumber = b.branchNumber and e.sin = b.managerSIN
     where e.salary > 50000
     order by b.branchName desc, firstName 
-    LIMIT 10
+    LIMIT 10;
   `;
 }
 
@@ -161,7 +161,8 @@ function problem11() {
     select sin, firstName, lastName, salary from Employee
     where salary <= all (
       select e2.salary from Employee e2
-    );
+    )
+    LIMIT 10;
   `;
 }
 
@@ -169,7 +170,8 @@ function problem14() {
   return prisma.$queryRaw`
     select CAST(SUM(salary) as CHAR(10)) as 'sum of employees salaries' from Employee e
       left join Branch b on b.branchNumber = e.branchNumber
-    where b.branchName = 'Moscow';
+    where b.branchName = 'Moscow'
+    LIMIT 10;
  `;
 }
 
@@ -182,6 +184,7 @@ function problem15() {
     group by c.customerID, c.firstName, c.lastName
     having COUNT(DISTINCT(a.branchNumber)) = 4
     order by c.lastName, c.firstName
+    LIMIT 10;
   `
 }
 
@@ -194,7 +197,8 @@ function problem17() {
     where c.lastName like 'S%e%'
     group by c.customerID
     having COUNT(DISTINCT(a.accNumber)) >= 3
-    order by c.customerID;
+    order by c.customerID
+    LIMIT 10;
   `;
 }
 
@@ -205,10 +209,11 @@ function problem18() {
       left join Transactions t on a.accNumber = t.accNumber
       left join Branch b on a.branchNumber = b.branchNumber
     where b.branchName = 'Berlin'
-    group by a.accNumber, a.balance
+    group by a.accNumber
     having COUNT(DISTINCT (transNumber)) >= 10
     order by \`sum of transaction amounts\` 
-    LIMIT 10;`
+    LIMIT 10;
+  `;
 }
 
 const ProblemList = [
