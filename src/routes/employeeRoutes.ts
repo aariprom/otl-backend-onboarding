@@ -17,4 +17,17 @@ employeeRouter.post('/join', async (req, res) => {
     }
 });
 
+employeeRouter.delete('/leave', async (req, res) => {
+    try {
+        const { sin } = req.body;
+        await employeeService.leave({ sin });
+        res.send('안녕히 계세요 여러분!\n' +
+            '전 이 세상의 모든 굴레와 속박을 벗어 던지고 제 행복을 찾아 떠납니다!\n' +
+            '여러분도 행복하세요~~!');
+    } catch (e) {
+        console.error(e);
+        res.status(500).send({ message: 'An error occurred.'});
+    }
+});
+
 export default employeeRouter;

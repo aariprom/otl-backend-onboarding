@@ -1,5 +1,4 @@
 import prisma from '../prismaClient';
-import Util from "../util";
 
 export class EmployeeService {
     async join ({ sin, firstName, lastName, salary, branchNumber }: {
@@ -7,6 +6,12 @@ export class EmployeeService {
     }) {
         await prisma.employee.create({
             data: { sin, firstName, lastName, salary, branchNumber, },
+        });
+    }
+
+    async leave ({ sin, }: { sin: number, }) {
+        await prisma.employee.delete({
+            where: { sin },
         });
     }
 }
